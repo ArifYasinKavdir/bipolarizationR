@@ -2,7 +2,7 @@
 
 An R package for detecting and quantifying **polarization** and **consensus** in survey data using weighted kernel scoring and non-parametric bootstrap inference.
 
-This library is written based on polarization research conducted by **Zübeyir Nişancı**, **Belkıs Yüce** and **Arif Yasin Kavdır**. It is a faithful R port of the [`bipolarization`](https://github.com/) Python library.
+This library is written based on polarization research conducted by **Zübeyir Nişancı**, **Belkıs Yüce** and **Arif Yasin Kavdır**. It is a faithful R port of the [`bipolarization`](https://github.com/ArifYasinKavdir/bipolarization) Python library.
 
 ---
 
@@ -61,18 +61,18 @@ For a pair of variables `(x, y)` measured on a common integer scale `[start_valu
 
 Each weight `W[i, j]` is the product of two terms:
 
-| Term | Symbol | Meaning |
-|---|---|---|
-| Distance | `d` | How far apart `i` and `j` are on the scale |
-| Agreement | `a` | How much `i` and `j` tend toward the same region |
+| Term      | Symbol | Meaning                                          |
+| --------- | ------ | ------------------------------------------------ |
+| Distance  | `d`    | How far apart `i` and `j` are on the scale       |
+| Agreement | `a`    | How much `i` and `j` tend toward the same region |
 
 The matrix is always normalised so its maximum absolute value equals 1.
 
 ### Kernels
 
-| Kernel | Formula | Effect |
-|---|---|---|
-| `"power"` | `M = (d^p) * (a^q)` | Smooth, monotone. `p < 1` emphasises moderate distances; `p > 1` emphasises extremes. |
+| Kernel       | Formula                                    | Effect                                                                                       |
+| ------------ | ------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `"power"`    | `M = (d^p) * (a^q)`                        | Smooth, monotone. `p < 1` emphasises moderate distances; `p > 1` emphasises extremes.        |
 | `"gaussian"` | `M = (1 − exp(−d²/2p²)) * sign(d) * (a^q)` | S-shaped. `p` is the bandwidth sigma; small `p` makes weight rise steeply near the diagonal. |
 
 ### Polarization vs Consensus
@@ -133,27 +133,27 @@ calculate_scores(
 
 **Required arguments**
 
-| Argument | Type | Description |
-|---|---|---|
-| `df` | data.frame | Survey data; one row per respondent |
-| `first_variable` | character | Column name — row axis of the crosstab |
-| `second_variable` | character | Column name — column axis |
+| Argument          | Type       | Description                            |
+| ----------------- | ---------- | -------------------------------------- |
+| `df`              | data.frame | Survey data; one row per respondent    |
+| `first_variable`  | character  | Column name — row axis of the crosstab |
+| `second_variable` | character  | Column name — column axis              |
 
 **Keyword arguments**
 
-| Argument | Default | Description |
-|---|---|---|
-| `start_value` | `0` | Minimum value on the response scale |
-| `end_value` | `10` | Maximum value on the response scale |
-| `p` | `1.0` | Distance exponent (`power`) or sigma bandwidth (`gaussian`) |
-| `q` | `1.0` | Agreement exponent |
-| `score_type` | `"polarization"` | `"polarization"` or `"consensus"` |
-| `kernel` | `"power"` | `"power"` or `"gaussian"` |
-| `dropna` | `FALSE` | NaN handling flag (both columns are always inner-aligned) |
-| `B` | `2000` | Number of bootstrap replications |
-| `ci` | `0.95` | Confidence level (e.g. `0.95` → 95% CI) |
-| `random_state` | `42` | Integer seed for reproducibility; pass `NULL` for random |
-| `keep_dists` | `FALSE` | If `TRUE`, include raw bootstrap arrays in the result |
+| Argument       | Default          | Description                                                 |
+| -------------- | ---------------- | ----------------------------------------------------------- |
+| `start_value`  | `0`              | Minimum value on the response scale                         |
+| `end_value`    | `10`             | Maximum value on the response scale                         |
+| `p`            | `1.0`            | Distance exponent (`power`) or sigma bandwidth (`gaussian`) |
+| `q`            | `1.0`            | Agreement exponent                                          |
+| `score_type`   | `"polarization"` | `"polarization"` or `"consensus"`                           |
+| `kernel`       | `"power"`        | `"power"` or `"gaussian"`                                   |
+| `dropna`       | `FALSE`          | NaN handling flag (both columns are always inner-aligned)   |
+| `B`            | `2000`           | Number of bootstrap replications                            |
+| `ci`           | `0.95`           | Confidence level (e.g. `0.95` → 95% CI)                     |
+| `random_state` | `42`             | Integer seed for reproducibility; pass `NULL` for random    |
+| `keep_dists`   | `FALSE`          | If `TRUE`, include raw bootstrap arrays in the result       |
 
 **Returns:** named list — see [Return Value Schema](#return-value-schema).
 
@@ -200,11 +200,11 @@ dashboard_pair(
 )
 ```
 
-| Panel | Content |
-|---|---|
-| **A** (top-left) | Horizontal bar chart of point estimates with bootstrap CI error bars |
-| **B** (top-right) | Overlaid histograms of the bootstrap distributions |
-| **C** (bottom) | Heatmap of the W×P matrix with diagonal/anti-diagonal separator |
+| Panel             | Content                                                              |
+| ----------------- | -------------------------------------------------------------------- |
+| **A** (top-left)  | Horizontal bar chart of point estimates with bootstrap CI error bars |
+| **B** (top-right) | Overlaid histograms of the bootstrap distributions                   |
+| **C** (bottom)    | Heatmap of the W×P matrix with diagonal/anti-diagonal separator      |
 
 **Returns:** `list(scores = <calculate_scores result>)`
 
@@ -284,43 +284,43 @@ list(
 
 ### Choosing `score_type`
 
-| Goal | Recommended |
-|---|---|
+| Goal                                              | Recommended      |
+| ------------------------------------------------- | ---------------- |
 | Detect opposing camps (high on one, low on other) | `"polarization"` |
-| Detect shared conviction (both high or both low) | `"consensus"` |
+| Detect shared conviction (both high or both low)  | `"consensus"`    |
 
 ### Choosing `kernel`
 
-| Kernel | When to use |
-|---|---|
-| `"power"` | Default; interpretable; monotone distance effect |
+| Kernel       | When to use                                                                                             |
+| ------------ | ------------------------------------------------------------------------------------------------------- |
+| `"power"`    | Default; interpretable; monotone distance effect                                                        |
 | `"gaussian"` | Sharp threshold: cells close to diagonal get near-zero weight, weight rises steeply beyond distance `p` |
 
 ### Choosing `p`
 
-| Value (power kernel) | Effect |
-|---|---|
-| `p < 1` | Concave — moderate disagreements weighted heavily |
-| `p = 1` | Linear — proportional to distance |
-| `p > 1` | Convex — only large disagreements count |
+| Value (power kernel) | Effect                                            |
+| -------------------- | ------------------------------------------------- |
+| `p < 1`              | Concave — moderate disagreements weighted heavily |
+| `p = 1`              | Linear — proportional to distance                 |
+| `p > 1`              | Convex — only large disagreements count           |
 
 For the gaussian kernel, `p` = sigma: smaller `p` means faster saturation.
 
 ### Choosing `q`
 
-| Value | Effect |
-|---|---|
-| `q = 0` | Agreement term disabled — pure distance scoring |
-| `q = 1` | Linear agreement — default, balanced |
+| Value   | Effect                                                                         |
+| ------- | ------------------------------------------------------------------------------ |
+| `q = 0` | Agreement term disabled — pure distance scoring                                |
+| `q = 1` | Linear agreement — default, balanced                                           |
 | `q > 1` | Only cells near scale midpoint/anti-diagonal are weighted; extremes suppressed |
 
 ### Choosing `B`
 
-| `B` | When appropriate |
-|---|---|
+| `B`       | When appropriate               |
+| --------- | ------------------------------ |
 | `200–500` | Quick exploration, prototyping |
-| `2000` | Standard reporting |
-| `5000+` | Publication-quality CIs |
+| `2000`    | Standard reporting             |
+| `5000+`   | Publication-quality CIs        |
 
 ---
 
@@ -422,4 +422,4 @@ cat(sprintf("Highest cell: (%d, %d) = %.4f\n",
 
 If you use this package in academic work, please cite the underlying research:
 
-> Nişancı, Z., Yüce, B., & Kavdır, A. Y. (2024). *bipolarizationR: Weighted kernel scoring for polarization and consensus in survey data.* R package version 0.1.0.
+> Nişancı, Z., Yüce, B., & Kavdır, A. Y. (2024). _bipolarizationR: Weighted kernel scoring for polarization and consensus in survey data._ R package version 0.1.0.
