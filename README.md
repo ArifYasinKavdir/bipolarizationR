@@ -418,8 +418,8 @@ cat(sprintf("Highest cell: (%d, %d) = %.4f\n",
 
 ---
 
-## Citation
+<!-- ## Citation
 
 If you use this package in academic work, please cite the underlying research:
 
-> Nişancı, Z., Yüce, B., & Kavdır, A. Y. (2024). _bipolarizationR: Weighted kernel scoring for polarization and consensus in survey data._ R package version 0.1.0.
+> Nişancı, Z., Yüce, B., & Kavdır, A. Y. (2024). _bipolarizationR: Weighted kernel scoring for polarization and consensus in survey data._ R package version 0.1.0. -->
