@@ -12,7 +12,7 @@ This library is written based on polarization research conducted by **Zübeyir N
 
 ```r
 # install.packages("devtools")
-devtools::install_github("your-username/bipolarizationR")
+devtools::install_github("ArifYasinKavdir/bipolarizationR")
 ```
 
 ### Local installation (development)
