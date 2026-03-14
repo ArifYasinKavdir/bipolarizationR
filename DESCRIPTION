@@ -5,7 +5,7 @@ Version: 0.1.0
 Authors@R: c(
     person("Zubeyir", "Nisanci",  role = "aut"),
     person("Belkis",  "Yuce",     role = "aut"),
-    person("Arif Yasin", "Kavdir", role = c("aut", "cre"), email = "")
+    person("Arif Yasin", "Kavdir", role = c("aut", "cre"), email = "arifyasinkavdir@gmail.com")
   )
 Description: Detect and quantify polarization and consensus in survey data
     using weighted kernel scoring and non-parametric bootstrap inference.
