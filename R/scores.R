@@ -13,6 +13,13 @@
 }
 
 
+# Normalise all cells of A by the grand total so the whole matrix sums to 1.
+.normalize_globally <- function(A) {
+  total <- sum(A)
+  if (total > 0) A / total else matrix(0.0, nrow = nrow(A), ncol = ncol(A))
+}
+
+
 # Compute a single point-estimate score for the pair (x, y).
 #
 # Returns a named list whose public keys depend on score_type:
@@ -27,7 +34,8 @@
                                q,
                                score_type,
                                dropna,
-                               kernel = "power") {
+                               kernel  = "power",
+                               formula = "global") {
   full_scale <- seq(start_value, end_value)
   n          <- length(full_scale)
 
@@ -67,22 +75,50 @@
       below = r_mat > c_mat,   # x > y  (lower triangle)
       diag  = r_mat == c_mat
     )
-    P  <- .normalize_by_masks(A, masks)
-    WP <- P * W
+    n_above <- sum(A[masks$above])
+    n_below <- sum(A[masks$below])
 
-    result <- list(
-      type       = "polarization",
-      overall    = sum(WP),
-      .sparsity  = mean(A == 0),
-      .wp_matrix = WP,
-      .x_labels  = full_scale,
-      .n_above   = sum(A[masks$above]),
-      .n_below   = sum(A[masks$below])
-    )
-    # Variable-name keys are assigned dynamically (mirrors Python's dict[x] = ...)
-    result[[x]] <- sum(WP[masks$below])   # x-leaning group (lower triangle)
-    result[[y]] <- sum(WP[masks$above])   # y-leaning group (upper triangle)
-    return(result)
+    if (formula == "global") {
+      total       <- sum(A)
+      P           <- .normalize_globally(A)
+      WP          <- P * W
+      score_above <- sum(WP[masks$above])
+      score_below <- sum(WP[masks$below])
+      pct_above   <- if (total > 0) n_above / total * 100 else 0
+      pct_below   <- if (total > 0) n_below / total * 100 else 0
+
+      result <- list(
+        type       = "polarization",
+        overall    = sum(WP),
+        .sparsity  = mean(A == 0),
+        .wp_matrix = WP,
+        .x_labels  = full_scale,
+        .n_above   = n_above,
+        .n_below   = n_below
+      )
+      result[[x]]                       <- score_below
+      result[[y]]                       <- score_above
+      result[[paste0(x, "_per_person")]] <- if (pct_below > 0) score_below / pct_below else 0
+      result[[paste0(y, "_per_person")]] <- if (pct_above > 0) score_above / pct_above else 0
+      return(result)
+
+    } else {  # "per_triangle"
+      P  <- .normalize_by_masks(A, masks)
+      WP <- P * W
+
+      result <- list(
+        type       = "polarization",
+        overall    = sum(WP),
+        .sparsity  = mean(A == 0),
+        .wp_matrix = WP,
+        .x_labels  = full_scale,
+        .n_above   = n_above,
+        .n_below   = n_below
+      )
+      result[[x]] <- sum(WP[masks$below])
+      result[[y]] <- sum(WP[masks$above])
+      return(result)
+    }
 
   } else if (score_type == "consensus") {
     # s_mat = r_mat + c_mat  (1-based sums, range 2 to 2n)
@@ -130,11 +166,12 @@
                                B,
                                ci,
                                seed,
-                               kernel = "power") {
+                               kernel  = "power",
+                               formula = "global") {
   if (!is.null(seed)) set.seed(seed)
 
   point       <- .single_run_score(df, x, y, start_value, end_value, p, q,
-                                    score_type, dropna, kernel)
+                                    score_type, dropna, kernel, formula)
   public_keys <- names(point)[names(point) != "type" &
                                 !startsWith(names(point), ".")]
 
@@ -148,7 +185,7 @@
     idx <- sample.int(nr, nr, replace = TRUE)
     s   <- .single_run_score(df[idx, , drop = FALSE], x, y,
                               start_value, end_value, p, q,
-                              score_type, dropna, kernel)
+                              score_type, dropna, kernel, formula)
     for (k in public_keys) dist[[k]][b] <- s[[k]]
   }
 
@@ -193,6 +230,12 @@
 #' @param q              Numeric. Agreement exponent. Default 1.0.
 #' @param score_type     Character. \code{"polarization"} or \code{"consensus"}. Default \code{"polarization"}.
 #' @param kernel         Character. \code{"power"} or \code{"gaussian"}. Default \code{"power"}.
+#' @param formula        Character. \code{"global"} (default) or \code{"per_triangle"}.
+#'   \code{"global"} divides all cells by the grand total so the whole matrix
+#'   sums to 1; polarization scores reflect each triangle's share of the full
+#'   sample and per-person keys (\code{<var>_per_person}) are added.
+#'   \code{"per_triangle"} is the legacy behaviour: each triangle is normalised
+#'   independently.
 #' @param dropna         Logical. Informational flag; both columns are always
 #'   inner-aligned (NAs dropped). Default \code{FALSE}.
 #' @param B              Integer. Number of bootstrap replications. Default 2000.
@@ -204,15 +247,18 @@
 #' @return A named list with elements:
 #' \describe{
 #'   \item{\code{type}}{Echo of \code{score_type}.}
-#'   \item{\code{point}}{Named list of point estimates. For polarization:
-#'     \code{first_variable}, \code{second_variable}, \code{overall}, plus
-#'     diagnostics \code{.sparsity}, \code{.wp_matrix}, \code{.x_labels},
-#'     \code{.n_above}, \code{.n_below}. For consensus: \code{negatives},
-#'     \code{positives}, \code{overall}, plus diagnostics.}
+#'   \item{\code{point}}{Named list of point estimates. For polarization with
+#'     \code{formula="global"}: \code{first_variable}, \code{second_variable},
+#'     \code{overall}, \code{<first_variable>_per_person},
+#'     \code{<second_variable>_per_person}, plus diagnostics.
+#'     With \code{formula="per_triangle"}: \code{first_variable},
+#'     \code{second_variable}, \code{overall}, plus diagnostics.
+#'     For consensus: \code{negatives}, \code{positives}, \code{overall}, plus
+#'     diagnostics.}
 #'   \item{\code{bootstrap}}{Named list per public score key, each containing
 #'     \code{mean}, \code{se}, \code{ci} (length-2 vector), and optionally
 #'     \code{dist}.}
-#'   \item{\code{meta}}{List with \code{B}, \code{ci}, \code{kernel}.}
+#'   \item{\code{meta}}{List with \code{B}, \code{ci}, \code{kernel}, \code{formula}.}
 #' }
 #'
 #' @export
@@ -233,6 +279,7 @@ calculate_scores <- function(df,
                               q            = 1.0,
                               score_type   = "polarization",
                               kernel       = "power",
+                              formula      = "global",
                               dropna       = FALSE,
                               B            = 2000L,
                               ci           = 0.95,
@@ -251,7 +298,8 @@ calculate_scores <- function(df,
     B           = B,
     ci          = ci,
     seed        = random_state,
-    kernel      = kernel
+    kernel      = kernel,
+    formula     = formula
   )
 
   boot <- res$summary
@@ -263,6 +311,6 @@ calculate_scores <- function(df,
     type      = res$point$type,
     point     = res$point,
     bootstrap = boot,
-    meta      = list(B = B, ci = ci, kernel = kernel)
+    meta      = list(B = B, ci = ci, kernel = kernel, formula = formula)
   )
 }
