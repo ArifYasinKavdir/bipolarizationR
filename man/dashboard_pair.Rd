@@ -17,6 +17,13 @@
       anti-diagonal (consensus) is drawn as a dashed separator. Cell values
       are printed inside each tile.}
   }
+
+  For \code{score_type = "polarization"} only the per-person scores
+  (\code{<x>_per_person}, \code{<y>_per_person}) are visualized. They are
+  recomputed inside every bootstrap resample, so panels A and B show the
+  bootstrap distribution of the per-person scores themselves. The aggregate
+  triangle scores and \code{overall} are still returned in the result but
+  are not plotted.
 }
 \usage{
 dashboard_pair(

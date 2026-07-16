@@ -1,7 +1,7 @@
 Package: bipolarizationR
 Type: Package
 Title: Detect and Quantify Polarization and Consensus in Survey Data
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(
     person("Zubeyir", "Nisanci",  role = "aut"),
     person("Belkis",  "Yuce",     role = "aut"),

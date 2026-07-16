@@ -85,6 +85,13 @@ weight_matrix_visualization <- function(start_value = 0,
 #' }
 #' A text summary is also printed to the console.
 #'
+#' For \code{score_type = "polarization"} only the per-person scores
+#' (\code{<x>_per_person}, \code{<y>_per_person}) are visualized. They are
+#' recomputed inside every bootstrap resample, so panels A and B show the
+#' bootstrap distribution of the per-person scores themselves. The aggregate
+#' triangle scores and \code{overall} are still returned in the result but
+#' are not plotted.
+#'
 #' @param df         Data frame. Survey data; one row per respondent.
 #' @param x          Character. Column name of the first variable.
 #' @param y          Character. Column name of the second variable.
@@ -141,9 +148,13 @@ dashboard_pair <- function(df,
   point <- res$point
   boot  <- res$bootstrap
 
-  # Keys shown in panels A and B
+  # Keys shown in panels A and B: per-person scores only for polarization;
+  # aggregate scores stay available in the returned result.
   if (score_type == "polarization") {
-    keys <- names(boot)[names(boot) != "overall"]
+    keys <- names(boot)[endsWith(names(boot), "_per_person")]
+    if (length(keys) == 0) {  # e.g. formula = "per_triangle" has no per-person keys
+      keys <- names(boot)[names(boot) != "overall"]
+    }
   } else {
     keys <- names(boot)
   }
@@ -195,7 +206,7 @@ dashboard_pair <- function(df,
     geom_errorbarh(aes(xmin = lo, xmax = hi), height = 0.2, linewidth = 0.9) +
     geom_text(
       aes(
-        label = sprintf("%.3f", value),
+        label = sprintf("%.4f", value),
         hjust = ifelse(value >= 0, -0.15, 1.15)
       ),
       size = 3
@@ -225,7 +236,7 @@ dashboard_pair <- function(df,
   )
 
   key_colours <- setNames(
-    palette[seq_along(keys) %% length(palette) + 1],
+    palette[(seq_along(keys) - 1L) %% length(palette) + 1L],
     keys
   )
 

@@ -206,6 +206,8 @@ dashboard_pair(
 | **B** (top-right) | Overlaid histograms of the bootstrap distributions                   |
 | **C** (bottom)    | Heatmap of the W×P matrix with diagonal/anti-diagonal separator      |
 
+For `score_type = "polarization"` panels A and B visualize **only the per-person scores** (`<x>_per_person`, `<y>_per_person`), which are recomputed inside every bootstrap resample. The aggregate triangle scores and `overall` are still returned in the result but are not plotted.
+
 **Returns:** `list(scores = <calculate_scores result>)`
 
 ---
@@ -367,11 +369,13 @@ weight_matrix_visualization(p = 0.3, q = 1.0, type = "polarization", kernel = "g
 ### Full dashboard
 
 ```r
+# Visualizes the per-person scores, recomputed at every bootstrap resample
 dash <- dashboard_pair(df, "idemus", "idekemalist",
                        score_type = "polarization", B_boot = 2000)
 
-# Access the underlying scores
+# Aggregate scores are still available programmatically
 dash$scores$point$overall
+dash$scores$point$idemus_per_person
 ```
 
 ### Compare multiple pairs
